@@ -155,7 +155,7 @@ export const incrementUsage = async (uid: string, field: 'importCount' | 'optimi
   }
 };
 
-export const refillUsage = async (uid: string) => {
+export const refillUsage = async (uid: string, credits: { imports: number, audits: number, enhancements: number }) => {
   const userPath = `users/${uid}`;
   try {
     const userDoc = await getDoc(doc(db, 'users', uid));
@@ -165,9 +165,9 @@ export const refillUsage = async (uid: string) => {
     await updateDoc(doc(db, 'users', uid), {
       uid,
       email: data.email,
-      importLimit: increment(2),
-      enhanceLimit: increment(10),
-      optimizeLimit: increment(3),
+      importLimit: increment(credits.imports),
+      enhanceLimit: increment(credits.enhancements),
+      optimizeLimit: increment(credits.audits),
       lastLogin: serverTimestamp()
     });
   } catch (err) {

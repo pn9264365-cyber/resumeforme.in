@@ -1,11 +1,12 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { SparklesIcon, XIcon, CheckCircle2Icon, CrownIcon, ArrowRightIcon } from 'lucide-react';
+import { Sparkles, X, CheckCircle2, Zap, ArrowRight, ShieldCheck, Star } from 'lucide-react';
 
 interface UpgradeModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onUpgrade: () => void;
+  onUpgrade: (amount: number) => void;
+  onViewPlans: () => void;
   title?: string;
   description?: string;
 }
@@ -14,8 +15,9 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
   isOpen, 
   onClose, 
   onUpgrade,
-  title = "Unlock More Potential",
-  description = "You've reached your free limit. Get a Power Pack to continue building your perfect career path."
+  onViewPlans,
+  title = "Unlock Neural Potential",
+  description = "You've reached your free limit. Refill your neural bank to continue architecting your career."
 }) => {
   if (!isOpen) return null;
 
@@ -27,52 +29,62 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           onClick={onClose}
-          className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
+          className="absolute inset-0 bg-slate-900/40 backdrop-blur-xl"
         />
         
         <motion.div
           initial={{ scale: 0.95, opacity: 0, y: 20 }}
           animate={{ scale: 1, opacity: 1, y: 0 }}
           exit={{ scale: 0.95, opacity: 0, y: 20 }}
-          className="relative w-full max-w-lg bg-white rounded-3xl shadow-2xl overflow-hidden"
+          className="relative w-full max-w-lg bg-white rounded-[3rem] shadow-[0_30px_100px_rgba(0,0,0,0.15)] overflow-hidden"
         >
-          {/* Header Image/Pattern */}
-          <div className="relative h-32 bg-gradient-to-br from-primary to-indigo-600 flex items-center justify-center overflow-hidden">
-             <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-white via-transparent to-transparent animate-pulse" />
-             <div className="p-4 bg-white/10 rounded-2xl backdrop-blur-md">
-                <CrownIcon size={40} className="text-white drop-shadow-lg" />
-             </div>
+          {/* Header Visual */}
+          <div className="relative h-48 bg-slate-900 flex items-center justify-center overflow-hidden">
+             <div className="absolute inset-0 grid-pattern opacity-10" />
+             <motion.div 
+                animate={{ 
+                    rotate: [0, 5, -5, 0],
+                    scale: [1, 1.05, 0.95, 1]
+                }}
+                transition={{ duration: 10, repeat: Infinity }}
+                className="p-8 bg-white/5 rounded-[2.5rem] backdrop-blur-2xl border border-white/10 shadow-2xl"
+             >
+                <Zap size={48} className="text-indigo-400 fill-indigo-400 drop-shadow-[0_0_20px_rgba(129,140,248,0.5)]" />
+             </motion.div>
              <button 
                 onClick={onClose}
-                className="absolute top-4 right-4 p-2 text-white/50 hover:text-white hover:bg-white/10 rounded-full transition-colors"
+                className="absolute top-6 right-6 p-2 text-white/30 hover:text-white hover:bg-white/10 rounded-full transition-all"
              >
-                <XIcon size={20} />
+                <X size={24} />
              </button>
           </div>
 
-          <div className="p-8 text-center">
-            <h2 className="text-2xl font-black text-slate-900 mb-2">{title}</h2>
-            <p className="text-slate-500 mb-8 leading-relaxed">
+          <div className="p-10 text-center">
+            <h2 className="text-3xl font-black text-slate-900 mb-3 tracking-tight">{title}</h2>
+            <p className="text-slate-500 mb-8 leading-relaxed font-medium">
               {description}
             </p>
 
-            <div className="bg-slate-50 rounded-2xl p-6 border border-slate-100 mb-8">
-              <div className="flex items-center justify-between mb-4">
-                <span className="text-xs font-bold text-slate-400 uppercase tracking-widest text-left">Refill Pack Includes</span>
-                <span className="bg-primary/10 text-primary text-[10px] font-black px-2 py-0.5 rounded-full uppercase">One-time Upgrade</span>
+            <div className="bg-slate-50/50 rounded-[2.5rem] p-8 border border-slate-100 mb-8 relative overflow-hidden">
+                 <div className="absolute top-0 right-0 p-4 opacity-5">
+                    <Star size={80} className="fill-slate-900" />
+                </div>
+              <div className="flex items-center justify-between mb-6 relative z-10">
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] text-left">Starter Core Refill</span>
+                <span className="bg-emerald-500 text-white text-[9px] font-black px-3 py-1 rounded-full uppercase tracking-widest">Entry Tier</span>
               </div>
               
-              <div className="space-y-3">
+              <div className="space-y-4 relative z-10 text-left">
                 {[
-                  { text: "2 Additional Resume Imports", icon: SparklesIcon },
-                  { text: "10 AI Enhancements", icon: CheckCircle2Icon },
-                  { text: "3 Strategic Rewrites (Optimization)", icon: ArrowRightIcon },
+                  { text: "2 AI Strategic Imports", icon: Sparkles, color: "text-emerald-500" },
+                  { text: "10 Neural Audits", icon: Zap, color: "text-indigo-500" },
+                  { text: "20 Smart Enhancements", icon: Star, color: "text-amber-500" },
                 ].map((item, index) => (
-                  <div key={index} className="flex items-center gap-3 text-slate-700 font-medium">
-                    <div className="w-5 h-5 rounded-full bg-green-100 flex items-center justify-center text-green-600">
-                      <CheckCircle2Icon size={12} />
+                  <div key={index} className="flex items-center gap-4 text-slate-700 font-bold">
+                    <div className={`p-2 rounded-xl bg-white shadow-sm border border-slate-100 ${item.color}`}>
+                      <item.icon size={14} />
                     </div>
-                    <span className="text-sm">{item.text}</span>
+                    <span className="text-sm tracking-tight">{item.text}</span>
                   </div>
                 ))}
               </div>
@@ -80,28 +92,36 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
 
             <div className="flex flex-col gap-3">
               <button
-                onClick={onUpgrade}
-                className="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-4 rounded-2xl shadow-lg shadow-slate-200 transition-all active:scale-[0.98] flex items-center justify-center gap-2 group"
+                onClick={() => onUpgrade(29)}
+                className="w-full bg-slate-900 hover:bg-black text-white font-black py-5 rounded-2xl shadow-xl transition-all active:scale-[0.98] flex items-center justify-center gap-3"
               >
-                <span>Upgrade Now for ₹9</span>
-                <ArrowRightIcon size={18} className="transition-transform group-hover:translate-x-1" />
+                Buy Starter Pack for ₹29
+                <ArrowRight size={18} />
+              </button>
+              <button 
+                onClick={onViewPlans}
+                className="w-full text-indigo-600 hover:text-indigo-700 font-black py-2 text-[11px] transition-all uppercase tracking-widest border-2 border-indigo-50 rounded-xl hover:bg-indigo-50/50"
+              >
+                View Professional & Elite Plans
               </button>
               <button 
                 onClick={onClose}
-                className="w-full text-slate-400 hover:text-slate-600 font-bold py-2 text-sm transition-colors"
+                className="w-full text-slate-400 hover:text-slate-900 font-black py-2 text-[11px] transition-all uppercase tracking-widest"
               >
-                Maybe Later
+                Return to Editor
               </button>
             </div>
           </div>
 
-          <div className="bg-slate-50 border-t border-slate-100 px-8 py-4 flex items-center justify-center gap-4 text-[10px] text-slate-400 font-medium">
-            <div className="flex items-center gap-1">
-              <div className="w-1 h-1 bg-green-500 rounded-full" />
-              Secure Payment via Razorpay
+          <div className="bg-slate-50 border-t border-slate-100 px-10 py-6 flex items-center justify-between text-[10px] text-slate-400 font-black uppercase tracking-widest">
+            <div className="flex items-center gap-2">
+              <ShieldCheck size={14} className="text-emerald-500" />
+              <span>Razorpay Secure</span>
             </div>
-            <div className="w-1 h-1 bg-slate-300 rounded-full" />
-            <span>Lifetime Access to Upgraded Limits</span>
+            <div className="flex items-center gap-2">
+              <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-pulse" />
+              <span>Instant Activation</span>
+            </div>
           </div>
         </motion.div>
       </div>
