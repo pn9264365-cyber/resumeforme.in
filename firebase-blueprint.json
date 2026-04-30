@@ -1,0 +1,30 @@
+{
+  "entities": {
+    "User": {
+      "title": "User Profile",
+      "description": "User profile information and usage metrics.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "displayName": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "photoURL": { "type": "string" },
+        "lastLogin": { "type": "string", "format": "date-time" },
+        "importCount": { "type": "integer" },
+        "optimizeCount": { "type": "integer" },
+        "enhanceCount": { "type": "integer" },
+        "importLimit": { "type": "integer" },
+        "optimizeLimit": { "type": "integer" },
+        "enhanceLimit": { "type": "integer" },
+        "isPremium": { "type": "boolean" }
+      },
+      "required": ["uid", "email"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "Collection of user profiles"
+    }
+  }
+}

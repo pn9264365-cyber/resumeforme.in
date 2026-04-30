@@ -1,0 +1,60 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 0. Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // --- Helpers ---
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // --- User Profile Validation ---
+    function isValidUser(data) {
+      return data.keys().hasAll(['uid', 'email', 'displayName', 'photoURL', 'lastLogin', 'importCount', 'optimizeCount', 'enhanceCount']) &&
+             data.keys().size() == 8 &&
+             data.uid is string && data.uid.size() <= 128 &&
+             data.email is string && data.email.size() <= 256 &&
+             data.displayName is string && data.displayName.size() <= 256 &&
+             data.photoURL is string && data.photoURL.size() <= 1024 &&
+             data.lastLogin == request.time &&
+             data.importCount is int && data.importCount >= 0 && data.importCount <= 2 &&
+             data.optimizeCount is int && data.optimizeCount >= 0 && data.optimizeCount <= 2 &&
+             data.enhanceCount is int && data.enhanceCount >= 0 && data.enhanceCount <= 5;
+    }
+
+    // --- Collections ---
+    match /users/{userId} {
+      allow get: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidUser(incoming()) && isValidId(userId) &&
+                    incoming().importCount == 0 && incoming().optimizeCount == 0 && incoming().enhanceCount == 0;
+      allow update: if isOwner(userId) && isValidUser(incoming()) && 
+                    incoming().uid == existing().uid &&
+                    incoming().email == existing().email &&
+                    // Ensure counters only increase or stay the same
+                    incoming().importCount >= existing().importCount &&
+                    incoming().optimizeCount >= existing().optimizeCount &&
+                    incoming().enhanceCount >= existing().enhanceCount &&
+                    incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'photoURL', 'lastLogin', 'importCount', 'optimizeCount', 'enhanceCount']);
+      allow delete: if false;
+    }
+  }
+}
