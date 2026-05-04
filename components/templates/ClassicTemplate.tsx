@@ -29,18 +29,18 @@ export const ClassicTemplate: React.FC<TemplateProps> = ({ data }) => {
             {/* Experience */}
             {data.experience.length > 0 && (
                 <div className="mb-6">
-                    <h2 className="text-sm font-bold uppercase border-b border-gray-300 mb-4 pb-1 font-sans">Work Experience</h2>
+                    <h2 className="text-sm font-bold uppercase border-b border-gray-300 mb-4 pb-1 font-sans text-gray-900 tracking-wider">Work Experience</h2>
                     <div className="space-y-5">
                         {data.experience.map(exp => (
-                            <div key={exp.id}>
-                                <div className="flex justify-between font-bold text-md">
+                            <div key={exp.id} className="print:break-inside-avoid">
+                                <div className="flex justify-between font-bold text-md text-gray-900 mb-0.5">
                                     <span>{exp.company}</span>
-                                    <span className="font-sans text-sm font-normal text-gray-600">
+                                    <span className="font-sans text-xs font-medium text-gray-500">
                                         {exp.startDate} – {exp.current ? 'Present' : exp.endDate}
                                     </span>
                                 </div>
-                                <div className="italic text-sm mb-2">{exp.position}</div>
-                                <div className="text-sm leading-relaxed whitespace-pre-line">
+                                <div className="italic text-[13px] text-gray-700 font-medium mb-2">{exp.position}</div>
+                                <div className="text-[13px] leading-relaxed whitespace-pre-line text-gray-700">
                                     {exp.description}
                                 </div>
                             </div>
@@ -52,15 +52,15 @@ export const ClassicTemplate: React.FC<TemplateProps> = ({ data }) => {
             {/* Education */}
             {data.education.length > 0 && (
                 <div className="mb-6">
-                    <h2 className="text-sm font-bold uppercase border-b border-gray-300 mb-4 pb-1 font-sans">Education</h2>
-                    <div className="space-y-3">
+                    <h2 className="text-sm font-bold uppercase border-b border-gray-300 mb-4 pb-1 font-sans text-gray-900 tracking-wider">Education</h2>
+                    <div className="space-y-4">
                         {data.education.map(edu => (
-                            <div key={edu.id} className="flex justify-between">
+                            <div key={edu.id} className="flex justify-between print:break-inside-avoid">
                                 <div>
-                                    <div className="font-bold text-sm">{edu.institution}</div>
-                                    <div className="text-sm italic">{edu.degree} in {edu.fieldOfStudy}</div>
+                                    <div className="font-bold text-sm text-gray-900">{edu.institution}</div>
+                                    <div className="text-sm italic text-gray-700">{edu.degree} in {edu.fieldOfStudy}</div>
                                 </div>
-                                <div className="text-sm font-sans text-gray-600">
+                                <div className="text-xs font-sans text-gray-500 font-medium">
                                     {edu.startDate} – {edu.current ? 'Present' : edu.endDate}
                                 </div>
                             </div>
@@ -72,11 +72,11 @@ export const ClassicTemplate: React.FC<TemplateProps> = ({ data }) => {
             {/* Skills */}
             {data.skills.length > 0 && (
                 <div className="mb-6">
-                    <h2 className="text-sm font-bold uppercase border-b border-gray-300 mb-3 pb-1 font-sans">Skills</h2>
+                    <h2 className="text-sm font-bold uppercase border-b border-gray-300 mb-3 pb-1 font-sans text-gray-900 tracking-wider">Skills</h2>
                     <div className="space-y-2">
                         {Array.from(new Set(data.skills.map(s => s.category || 'Other'))).map(category => (
-                            <div key={category} className="text-sm leading-relaxed">
-                                <span className="font-bold">{category}:</span> {data.skills.filter(s => (s.category || 'Other') === category).map(s => s.name).join(', ')}
+                            <div key={category} className="text-[13px] leading-relaxed text-gray-700 print:break-inside-avoid">
+                                <span className="font-bold text-gray-900">{category}:</span> {data.skills.filter(s => (s.category || 'Other') === category).map(s => s.name).join(', ')}
                             </div>
                         ))}
                     </div>
@@ -86,15 +86,15 @@ export const ClassicTemplate: React.FC<TemplateProps> = ({ data }) => {
             {/* Projects */}
             {data.projects && data.projects.length > 0 && (
                 <div className="mb-6">
-                    <h2 className="text-sm font-bold uppercase border-b border-gray-300 mb-3 pb-1 font-sans">Projects</h2>
-                    <div className="space-y-4">
+                    <h2 className="text-sm font-bold uppercase border-b border-gray-300 mb-3 pb-1 font-sans text-gray-900 tracking-wider">Projects</h2>
+                    <div className="space-y-5">
                         {data.projects.map(project => (
-                            <div key={project.id}>
+                            <div key={project.id} className="print:break-inside-avoid">
                                 <div className="flex justify-between items-baseline mb-1">
-                                    <h3 className="text-sm font-bold">{project.name}</h3>
-                                    {project.technologies && <span className="text-xs italic text-gray-500">{project.technologies}</span>}
+                                    <h3 className="text-sm font-bold text-gray-900">{project.name}</h3>
+                                    {project.technologies && <span className="text-xs italic text-gray-500 font-sans">{project.technologies}</span>}
                                 </div>
-                                <div className="text-sm leading-relaxed">{project.description}</div>
+                                <div className="text-[13px] leading-relaxed text-gray-700">{project.description}</div>
                             </div>
                         ))}
                     </div>
@@ -103,13 +103,19 @@ export const ClassicTemplate: React.FC<TemplateProps> = ({ data }) => {
 
             {/* Certifications */}
             {data.certifications && data.certifications.length > 0 && (
-                <div>
-                    <h2 className="text-sm font-bold uppercase border-b border-gray-300 mb-3 pb-1 font-sans">Certifications</h2>
-                    <ul className="text-sm space-y-1">
-                        {data.certifications.map((cert, idx) => (
-                            <li key={idx}>• {cert}</li>
+                <div className="mb-6">
+                    <h2 className="text-sm font-bold uppercase border-b border-gray-300 mb-3 pb-1 font-sans text-gray-900 tracking-wider">Certifications</h2>
+                    <div className="space-y-3">
+                        {data.certifications.map((cert) => (
+                            <div key={cert.id} className="print:break-inside-avoid">
+                                <div className="flex justify-between items-baseline">
+                                    <div className="font-bold text-sm text-gray-900">{cert.name}</div>
+                                    <div className="text-[10px] text-gray-500 font-sans">{cert.date}</div>
+                                </div>
+                                <div className="text-xs text-gray-600 italic leading-tight">{cert.issuer}</div>
+                            </div>
                         ))}
-                    </ul>
+                    </div>
                 </div>
             )}
 

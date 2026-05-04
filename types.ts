@@ -25,6 +25,14 @@ export interface Skill {
     level: 'Beginner' | 'Intermediate' | 'Expert';
 }
 
+export interface Certification {
+    id: string;
+    name: string;
+    issuer: string;
+    date: string;
+    link?: string;
+}
+
 export interface ResumeData {
     personalInfo: {
         fullName: string;
@@ -38,7 +46,7 @@ export interface ResumeData {
     experience: WorkExperience[];
     education: Education[];
     skills: Skill[];
-    certifications?: string[];
+    certifications?: Certification[];
     projects?: Project[];
     publications?: string[];
     atsScore?: ATSScore;
@@ -101,7 +109,12 @@ export type TemplateId =
     | 'technical' 
     | 'elegant' 
     | 'compact' 
-    | 'premium';
+    | 'premium'
+    | 'venture'
+    | 'chronicle'
+    | 'synergy'
+    | 'elite'
+    | 'apex';
 
 export interface TemplateProps {
     data: ResumeData;

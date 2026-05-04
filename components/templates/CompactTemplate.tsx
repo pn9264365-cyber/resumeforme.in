@@ -33,7 +33,7 @@ export const CompactTemplate: React.FC<TemplateProps> = ({ data }) => {
                             <h2 className="text-[10px] font-black uppercase text-white bg-black px-2 py-0.5 mb-3 inline-block">History</h2>
                             <div className="space-y-4">
                                 {data.experience.map(exp => (
-                                    <div key={exp.id}>
+                                    <div key={exp.id} className="print:break-inside-avoid">
                                         <div className="flex justify-between items-baseline font-bold mb-0.5">
                                             <span className="text-sm uppercase tracking-tight">{exp.position}</span>
                                             <span className="text-[9px] text-gray-400">{exp.startDate} - {exp.current ? 'Present' : exp.endDate}</span>
@@ -53,7 +53,7 @@ export const CompactTemplate: React.FC<TemplateProps> = ({ data }) => {
                             <h2 className="text-[10px] font-black uppercase text-white bg-black px-2 py-0.5 mb-3 inline-block">Builds</h2>
                             <div className="grid grid-cols-2 gap-4">
                                 {data.projects.map(project => (
-                                    <div key={project.id} className="border-l border-gray-100 pl-3">
+                                    <div key={project.id} className="border-l border-gray-100 pl-3 print:break-inside-avoid">
                                         <h3 className="font-bold mb-1 uppercase tracking-tight">{project.name}</h3>
                                         <p className="text-gray-500 text-[10px] line-clamp-3">{project.description}</p>
                                     </div>
@@ -90,7 +90,7 @@ export const CompactTemplate: React.FC<TemplateProps> = ({ data }) => {
                             <h2 className="text-[9px] font-black uppercase tracking-widest text-gray-400 mb-3 underline decoration-black decoration-2 underline-offset-4">Training</h2>
                             <div className="space-y-3">
                                 {data.education.map(edu => (
-                                    <div key={edu.id}>
+                                    <div key={edu.id} className="print:break-inside-avoid">
                                         <div className="font-bold text-[10px]">{edu.degree}</div>
                                         <div className="text-[9px] text-gray-500 uppercase font-black">{edu.institution}</div>
                                         <div className="text-[8px] text-gray-400 font-bold">{edu.startDate}..{edu.current ? 'CUR' : edu.endDate}</div>
@@ -100,16 +100,17 @@ export const CompactTemplate: React.FC<TemplateProps> = ({ data }) => {
                         </section>
                     )}
 
-                    {data.certifications && data.certifications.length > 0 && (
+                     {data.certifications && data.certifications.length > 0 && (
                         <section>
                             <h2 className="text-[9px] font-black uppercase tracking-widest text-gray-400 mb-3 underline decoration-black decoration-2 underline-offset-4">Verified</h2>
-                            <ul className="text-[9px] font-bold text-gray-600 space-y-1">
-                                {data.certifications.map((cert, idx) => (
-                                    <li key={idx} className="flex gap-2">
-                                        <span className="text-black">■</span> {cert}
-                                    </li>
+                            <div className="space-y-4">
+                                {data.certifications.map((cert) => (
+                                    <div key={cert.id} className="text-[9px] print:break-inside-avoid">
+                                        <div className="font-bold text-gray-900 leading-tight uppercase tracking-tighter">{cert.name}</div>
+                                        <div className="text-gray-500 mt-0.5">{cert.issuer} {cert.date && ` / ${cert.date}`}</div>
+                                    </div>
                                 ))}
-                            </ul>
+                            </div>
                         </section>
                     )}
                 </div>

@@ -38,7 +38,7 @@ export const MinimalTemplate: React.FC<TemplateProps> = ({ data }) => {
                             <h3 className="text-sm font-bold uppercase tracking-wider text-slate-400 mb-4">Experience</h3>
                             <div className="space-y-8">
                                 {data.experience.map(exp => (
-                                    <div key={exp.id} className="relative pl-4 border-l-2 border-slate-100">
+                                    <div key={exp.id} className="relative pl-4 border-l-2 border-slate-100 print:break-inside-avoid">
                                         <div className="mb-2">
                                             <h4 className="font-bold text-slate-800">{exp.position}</h4>
                                             <div className="text-sm text-slate-500">{exp.company}</div>
@@ -58,7 +58,7 @@ export const MinimalTemplate: React.FC<TemplateProps> = ({ data }) => {
                             <h3 className="text-sm font-bold uppercase tracking-wider text-slate-400 mb-4">Projects</h3>
                             <div className="space-y-6">
                                 {data.projects.map(project => (
-                                    <div key={project.id} className="relative pl-4 border-l-2 border-slate-100">
+                                    <div key={project.id} className="relative pl-4 border-l-2 border-slate-100 print:break-inside-avoid">
                                         <div className="mb-2">
                                             <h4 className="font-bold text-slate-800">{project.name}</h4>
                                             {project.technologies && <div className="text-xs text-slate-500 italic mt-0.5">{project.technologies}</div>}
@@ -133,13 +133,14 @@ export const MinimalTemplate: React.FC<TemplateProps> = ({ data }) => {
                     {data.certifications && data.certifications.length > 0 && (
                         <section>
                             <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-4">Certifications</h3>
-                            <ul className="space-y-2">
-                                {data.certifications.map((cert, idx) => (
-                                    <li key={idx} className="text-xs text-slate-600 border-b border-slate-50 pb-1">
-                                        {cert}
-                                    </li>
+                            <div className="space-y-3">
+                                {data.certifications.map((cert) => (
+                                    <div key={cert.id} className="text-xs text-slate-600 border-b border-slate-50 pb-1 print:break-inside-avoid">
+                                        <div className="font-bold text-slate-800">{cert.name}</div>
+                                        <div className="text-[10px] text-slate-400">{cert.issuer} {cert.date && `• ${cert.date}`}</div>
+                                    </div>
                                 ))}
-                            </ul>
+                            </div>
                         </section>
                     )}
                 </div>

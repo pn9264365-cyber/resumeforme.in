@@ -42,7 +42,7 @@ export const TechnicalTemplate: React.FC<TemplateProps> = ({ data }) => {
                                 </h2>
                                 <div className="space-y-8">
                                     {data.experience.map(exp => (
-                                        <div key={exp.id}>
+                                        <div key={exp.id} className="print:break-inside-avoid">
                                             <div className="flex justify-between items-baseline text-white mb-1">
                                                 <h3 className="text-md font-bold">{exp.position}</h3>
                                                 <span className="text-[10px] text-[#475569]">{exp.startDate}..{exp.current ? 'now' : exp.endDate}</span>
@@ -64,7 +64,7 @@ export const TechnicalTemplate: React.FC<TemplateProps> = ({ data }) => {
                                 </h2>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     {data.projects.map(project => (
-                                        <div key={project.id} className="p-4 bg-[#1e293b]/50 border border-[#1e293b] rounded-sm flex flex-col justify-between">
+                                        <div key={project.id} className="p-4 bg-[#1e293b]/50 border border-[#1e293b] rounded-sm flex flex-col justify-between print:break-inside-avoid">
                                             <div>
                                                 <h4 className="text-white font-bold text-sm mb-2">{project.name}</h4>
                                                 <p className="text-[11px] leading-relaxed mb-4">{project.description}</p>
@@ -78,6 +78,24 @@ export const TechnicalTemplate: React.FC<TemplateProps> = ({ data }) => {
                     </div>
 
                     <div className="lg:col-span-1 space-y-10">
+                        {/* Certifications for Technical Template */}
+                        {data.certifications && data.certifications.length > 0 && (
+                            <section>
+                                <h2 className="text-xs uppercase font-bold text-emerald-400 mb-6 flex items-center gap-2">
+                                    <span className="h-3 w-1 bg-emerald-400"></span> Verification
+                                </h2>
+                                <div className="space-y-4">
+                                    {data.certifications.map(cert => (
+                                        <div key={cert.id} className="text-[11px] print:break-inside-avoid">
+                                            <div className="text-white font-bold mb-1 leading-tight">{cert.name}</div>
+                                            <div className="opacity-70 text-[10px]">&gt; {cert.issuer}</div>
+                                            {cert.date && <div className="text-emerald-500/60 text-[9px] mt-0.5">{cert.date}</div>}
+                                        </div>
+                                    ))}
+                                </div>
+                            </section>
+                        )}
+
                         <section>
                             <h2 className="text-xs uppercase font-bold text-emerald-400 mb-6 flex items-center gap-2">
                                 <span className="h-3 w-1 bg-emerald-400"></span> Tech_Stack

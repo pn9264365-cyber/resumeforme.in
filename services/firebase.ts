@@ -73,6 +73,7 @@ export interface UserProfile {
   optimizeLimit: number;
   enhanceLimit: number;
   isPremium: boolean;
+  planType?: 'free' | 'basic' | 'pro' | 'elite';
 }
 
 export const signInWithGoogle = async () => {
@@ -98,6 +99,7 @@ export const signInWithGoogle = async () => {
           optimizeLimit: 2,
           enhanceLimit: 5,
           isPremium: false,
+          planType: 'free',
         });
       } else {
         const data = userDoc.data();
@@ -115,6 +117,7 @@ export const signInWithGoogle = async () => {
           optimizeLimit: data.optimizeLimit ?? 2,
           enhanceLimit: data.enhanceLimit ?? 5,
           isPremium: data.isPremium ?? false,
+          planType: data.planType ?? 'free',
         });
       }
     } catch (err) {
@@ -155,7 +158,20 @@ export const incrementUsage = async (uid: string, field: 'importCount' | 'optimi
   }
 };
 
-export const refillUsage = async (uid: string, credits: { imports: number, audits: number, enhancements: number }) => {
+export const decrementUsage = async (uid: string, field: 'importLimit' | 'optimizeLimit' | 'enhanceLimit') => {
+  const userPath = `users/${uid}`;
+  try {
+    const userDocRef = doc(db, 'users', uid);
+    await updateDoc(userDocRef, {
+      [field]: increment(-1),
+      lastActivity: serverTimestamp()
+    });
+  } catch (err) {
+    console.error(`Error decrementing ${field}:`, err);
+  }
+};
+
+export const refillUsage = async (uid: string, credits: { imports: number, audits: number, enhancements: number }, planType?: 'basic' | 'pro' | 'elite') => {
   const userPath = `users/${uid}`;
   try {
     const userDoc = await getDoc(doc(db, 'users', uid));
@@ -168,6 +184,8 @@ export const refillUsage = async (uid: string, credits: { imports: number, audit
       importLimit: increment(credits.imports),
       enhanceLimit: increment(credits.enhancements),
       optimizeLimit: increment(credits.audits),
+      isPremium: true,
+      planType: planType || data.planType || 'basic',
       lastLogin: serverTimestamp()
     });
   } catch (err) {

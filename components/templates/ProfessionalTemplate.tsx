@@ -29,7 +29,7 @@ export const ProfessionalTemplate: React.FC<TemplateProps> = ({ data }) => {
                                 <h2 className="text-xl font-bold text-blue-700 uppercase tracking-wider mb-4 border-b border-gray-200 pb-1">Work History</h2>
                                 <div className="space-y-6">
                                     {data.experience.map(exp => (
-                                        <div key={exp.id}>
+                                        <div key={exp.id} className="print:break-inside-avoid">
                                             <div className="flex justify-between items-start mb-1">
                                                 <h3 className="font-bold text-gray-900">{exp.position}</h3>
                                                 <span className="text-xs font-bold text-gray-500 bg-gray-100 px-2 py-1 rounded">
@@ -51,7 +51,7 @@ export const ProfessionalTemplate: React.FC<TemplateProps> = ({ data }) => {
                                 <h2 className="text-xl font-bold text-blue-700 uppercase tracking-wider mb-4 border-b border-gray-200 pb-1">Key Projects</h2>
                                 <div className="space-y-5">
                                     {data.projects.map(project => (
-                                        <div key={project.id}>
+                                        <div key={project.id} className="print:break-inside-avoid">
                                             <h3 className="font-bold text-gray-900 flex justify-between">
                                                 {project.name}
                                                 {project.technologies && <span className="text-[10px] font-mono text-blue-500">{project.technologies}</span>}
@@ -70,7 +70,7 @@ export const ProfessionalTemplate: React.FC<TemplateProps> = ({ data }) => {
                                 <h2 className="text-xl font-bold text-blue-700 uppercase tracking-wider mb-4 border-b border-gray-200 pb-1">Expertise</h2>
                                 <div className="space-y-4">
                                     {data.skills.map(skill => (
-                                        <div key={skill.id}>
+                                        <div key={skill.id} className="print:break-inside-avoid">
                                             <div className="flex justify-between mb-1">
                                                 <span className="text-xs font-bold text-gray-700">{skill.name}</span>
                                                 <span className="text-[10px] text-blue-600 font-bold">{skill.level}</span>
@@ -87,12 +87,27 @@ export const ProfessionalTemplate: React.FC<TemplateProps> = ({ data }) => {
                             </section>
                         )}
 
+                        {data.certifications && data.certifications.length > 0 && (
+                            <section>
+                                <h2 className="text-xl font-bold text-blue-700 uppercase tracking-wider mb-4 border-b border-gray-200 pb-1">Certifications</h2>
+                                <div className="space-y-4">
+                                    {data.certifications.map(cert => (
+                                        <div key={cert.id} className="print:break-inside-avoid">
+                                            <div className="font-bold text-sm text-gray-900 leading-tight">{cert.name}</div>
+                                            <div className="text-xs text-blue-600 font-medium">{cert.issuer}</div>
+                                            {cert.date && <div className="text-[10px] text-gray-400 mt-0.5">{cert.date}</div>}
+                                        </div>
+                                    ))}
+                                </div>
+                            </section>
+                        )}
+
                         {data.education.length > 0 && (
                             <section>
                                 <h2 className="text-xl font-bold text-blue-700 uppercase tracking-wider mb-4 border-b border-gray-200 pb-1">Education</h2>
                                 <div className="space-y-4">
                                     {data.education.map(edu => (
-                                        <div key={edu.id}>
+                                        <div key={edu.id} className="print:break-inside-avoid">
                                             <div className="font-bold text-sm text-gray-900">{edu.degree}</div>
                                             <div className="text-xs text-gray-600">{edu.institution}</div>
                                             <div className="text-[10px] text-gray-400 italic">

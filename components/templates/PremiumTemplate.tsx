@@ -35,7 +35,7 @@ export const PremiumTemplate: React.FC<TemplateProps> = ({ data }) => {
                             </h2>
                             <div className="space-y-5">
                                 {data.skills.map(skill => (
-                                    <div key={skill.id}>
+                                    <div key={skill.id} className="print:break-inside-avoid">
                                         <div className="flex justify-between items-center mb-2">
                                             <span className="text-xs font-bold tracking-wide">{skill.name}</span>
                                             <span className="text-[8px] uppercase tracking-widest text-amber-400 font-black">{skill.level}</span>
@@ -53,16 +53,33 @@ export const PremiumTemplate: React.FC<TemplateProps> = ({ data }) => {
                     )}
 
                     {data.education.length > 0 && (
-                        <div className="space-y-6 mt-auto">
+                        <div className="space-y-6">
                             <h2 className="text-[10px] uppercase font-black tracking-[0.3em] text-slate-500 flex items-center gap-3">
                                 BACKGROUND <span className="flex-1 h-px bg-slate-800"></span>
                             </h2>
                             {data.education.map(edu => (
-                                <div key={edu.id} className="border-l-2 border-amber-400 pl-4 py-1">
+                                <div key={edu.id} className="border-l-2 border-amber-400 pl-4 py-1 print:break-inside-avoid">
                                     <div className="text-xs font-bold">{edu.institution}</div>
                                     <div className="text-[10px] text-slate-400 italic mt-1">{edu.degree}</div>
                                 </div>
                             ))}
+                        </div>
+                    )}
+
+                    {data.certifications && data.certifications.length > 0 && (
+                        <div className="space-y-6 mt-6">
+                            <h2 className="text-[10px] uppercase font-black tracking-[0.3em] text-slate-500 flex items-center gap-3">
+                                CREDENTIALS <span className="flex-1 h-px bg-slate-800"></span>
+                            </h2>
+                            <div className="space-y-4">
+                                {data.certifications.map(cert => (
+                                    <div key={cert.id} className="print:break-inside-avoid">
+                                        <div className="text-xs font-bold text-amber-400 leading-tight">{cert.name}</div>
+                                        <div className="text-[10px] text-slate-400 mt-1">{cert.issuer}</div>
+                                        <div className="text-[9px] font-black text-slate-600 uppercase mt-1 tracking-widest">{cert.date}</div>
+                                    </div>
+                                ))}
+                            </div>
                         </div>
                     )}
                 </div>
@@ -83,7 +100,7 @@ export const PremiumTemplate: React.FC<TemplateProps> = ({ data }) => {
                             <h2 className="text-[10px] uppercase font-black tracking-[0.3em] text-amber-500 mb-8 font-mono tracking-tighter">/ Career_Velocity</h2>
                             <div className="space-y-12">
                                 {data.experience.map(exp => (
-                                    <div key={exp.id} className="relative group">
+                                    <div key={exp.id} className="relative group print:break-inside-avoid">
                                         <div className="flex justify-between items-baseline mb-2">
                                             <h3 className="text-2xl font-black text-slate-900 group-hover:text-amber-600 transition-colors uppercase tracking-tighter">{exp.position}</h3>
                                             <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">{exp.startDate} - {exp.current ? 'NOW' : exp.endDate}</span>
@@ -103,7 +120,7 @@ export const PremiumTemplate: React.FC<TemplateProps> = ({ data }) => {
                             <h2 className="text-[10px] uppercase font-black tracking-[0.3em] text-amber-500 mb-8 font-mono tracking-tighter">/ Project_Portfolio</h2>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                 {data.projects.map(project => (
-                                    <div key={project.id} className="border border-slate-100 p-6 rounded-lg hover:border-amber-200 transition-all cursor-default">
+                                    <div key={project.id} className="border border-slate-100 p-6 rounded-lg hover:border-amber-200 transition-all cursor-default print:break-inside-avoid">
                                         <h4 className="font-black text-lg text-slate-900 mb-2 uppercase tracking-tighter">{project.name}</h4>
                                         <p className="text-sm text-slate-500 leading-relaxed font-medium mb-4">{project.description}</p>
                                         {project.technologies && <div className="text-[10px] font-black text-amber-600 uppercase tracking-widest">{project.technologies}</div>}

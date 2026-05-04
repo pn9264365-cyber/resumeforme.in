@@ -54,9 +54,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
     children
 }) => {
     return (
-        <div className="flex h-screen bg-white overflow-hidden dot-pattern">
+        <div className="flex h-screen bg-white overflow-hidden dot-pattern print:block print:h-auto print:bg-white print:overflow-visible">
             {/* Minimal Sidebar Navigation */}
-            <aside className="w-16 md:w-20 bg-slate-900 flex flex-col items-center py-8 shrink-0 z-50">
+            <aside className="w-16 md:w-20 bg-slate-900 flex flex-col items-center py-8 shrink-0 z-50 print:hidden">
                 <div className="p-3 bg-indigo-500 rounded-2xl shadow-lg shadow-indigo-500/20 mb-10">
                     <SparklesIcon size={20} className="text-white" />
                 </div>
@@ -90,7 +90,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                                     <div className="flex flex-col items-center justify-center p-2 rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 transition-colors group relative" title="Data Imports Remaining">
                                         <UploadIcon size={12} className="text-emerald-400 mb-1" />
                                         <span className="text-[10px] font-black text-white leading-none">
-                                            {userData.isPremium ? '∞' : Math.max(0, (userData.importLimit || 0) - (userData.importCount || 0))}
+                                            {userData.importLimit ?? 0}
                                         </span>
                                         <div className="absolute left-full ml-4 px-2 py-1 bg-slate-800 text-white text-[10px] font-black uppercase tracking-widest rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-[100]">
                                             Imports
@@ -101,7 +101,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                                     <div className="flex flex-col items-center justify-center p-2 rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 transition-colors group relative" title="Strategic Audits Remaining">
                                         <TrendingUpIcon size={12} className="text-indigo-400 mb-1" />
                                         <span className="text-[10px] font-black text-white leading-none">
-                                            {userData.isPremium ? '∞' : Math.max(0, (userData.optimizeLimit || 0) - (userData.optimizeCount || 0))}
+                                            {userData.optimizeLimit ?? 0}
                                         </span>
                                         <div className="absolute left-full ml-4 px-2 py-1 bg-slate-800 text-white text-[10px] font-black uppercase tracking-widest rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-[100]">
                                             Intelligence
@@ -112,7 +112,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                                     <div className="flex flex-col items-center justify-center p-2 rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 transition-colors group relative" title="AI Enhancements Remaining">
                                         <SparklesIcon size={12} className="text-amber-400 mb-1" />
                                         <span className="text-[10px] font-black text-white leading-none">
-                                            {userData.isPremium ? '∞' : Math.max(0, (userData.enhanceLimit || 0) - (userData.enhanceCount || 0))}
+                                            {userData.enhanceLimit ?? 0}
                                         </span>
                                         <div className="absolute left-full ml-4 px-2 py-1 bg-slate-800 text-white text-[10px] font-black uppercase tracking-widest rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-[100]">
                                             Enhancements
@@ -144,7 +144,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
             <div className="flex-1 flex flex-col min-w-0">
                 {/* Horizontal Shell Header */}
-                <header className="h-20 border-b border-slate-100 bg-white/60 backdrop-blur-xl flex items-center justify-between px-8 z-40">
+                <header className="h-20 border-b border-slate-100 bg-white/60 backdrop-blur-xl flex items-center justify-between px-8 z-40 print:hidden">
                     <div className="flex items-center gap-6">
                         <div className="flex flex-col">
                             <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Active Project</span>
@@ -222,13 +222,13 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 </header>
 
                 {/* Content Area Overlaying the Dot Pattern */}
-                <div className="flex-1 overflow-hidden">
+                <div className="flex-1 overflow-hidden print:block print:overflow-visible print:h-auto">
                     {children}
                 </div>
             </div>
             
             {/* Global Help Button */}
-            <button className="fixed bottom-8 right-8 p-4 bg-white border border-slate-100 shadow-2xl rounded-2xl text-slate-400 hover:text-indigo-600 transition-all hover:-translate-y-1 z-[100]">
+            <button className="fixed bottom-8 right-8 p-4 bg-white border border-slate-100 shadow-2xl rounded-2xl text-slate-400 hover:text-indigo-600 transition-all hover:-translate-y-1 z-[100] print:hidden">
                 <HelpCircleIcon size={24} />
             </button>
         </div>

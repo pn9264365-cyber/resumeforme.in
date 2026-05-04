@@ -1,81 +1,107 @@
+import { GoogleGenAI } from "@google/genai";
 import { ResumeData } from "../types";
+
+// Initialize AI client lazily
+let aiClient: GoogleGenAI | null = null;
+const getAI = () => {
+    if (!aiClient) {
+        const apiKey = process.env.GEMINI_API_KEY;
+        if (!apiKey) {
+            throw new Error("GEMINI_API_KEY is not defined. Please check your system settings or provide an API key in the environment.");
+        }
+        aiClient = new GoogleGenAI({ apiKey });
+    }
+    return aiClient;
+};
+
+const MODEL_NAME = "gemini-3-flash-preview";
 
 export const generateSummary = async (currentData: ResumeData): Promise<string> => {
     try {
-        const response = await fetch("/api/ai/summary", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ data: currentData }),
+        const ai = getAI();
+        const response = await ai.models.generateContent({
+            model: MODEL_NAME,
+            contents: `Based on the following resume data, write a professional, compelling summary (3-4 sentences).
+            Name: ${currentData.personalInfo.fullName}
+            Skills: ${currentData.skills.map(s => s.name).join(', ')}
+            Exp: ${currentData.experience.map(e => `${e.position} at ${e.company}`).join('; ')}
+            Return only the summary text.`,
+            config: {
+                temperature: 0.7,
+            }
         });
         
-        if (!response.ok) {
-            const err = await response.json();
-            throw new Error(err.details || err.error || "AI Summary failed");
-        }
-        const result = await response.json();
-        return result.text;
-    } catch (error) {
-        console.error("Gemini Service Error:", error);
+        return response.text.trim();
+    } catch (error: any) {
+        console.error("AI Summary Error:", error);
         throw error;
     }
 };
 
 export const enhanceJobDescription = async (position: string, company: string, roughNotes: string): Promise<string> => {
     try {
-        const response = await fetch("/api/ai/enhance-description", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ position, company, roughNotes }),
+        const ai = getAI();
+        const response = await ai.models.generateContent({
+            model: MODEL_NAME,
+            contents: `Improve this job description bullet points.
+            Role: ${position} at ${company}
+            Notes: ${roughNotes}
+            Return 3-5 high-impact bullet points starting with •. Use action verbs and quantify where possible.`,
+            config: {
+                temperature: 0.6,
+            }
         });
         
-        if (!response.ok) {
-            const err = await response.json();
-            throw new Error(err.details || err.error || "AI Enhancement failed");
-        }
-        const result = await response.json();
-        return result.text;
-    } catch (error) {
-        console.error("Gemini Service Error:", error);
+        return response.text.trim();
+    } catch (error: any) {
+        console.error("AI Job Enhancement Error:", error);
         throw error;
     }
 };
 
 export const suggestSkills = async (position: string): Promise<string[]> => {
     try {
-        const response = await fetch("/api/ai/suggest-skills", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ position }),
+        const ai = getAI();
+        const response = await ai.models.generateContent({
+            model: MODEL_NAME,
+            contents: `Suggest 10 relevant technical and soft skills for a "${position}". Return as a JSON array of strings.`,
+            config: {
+                responseMimeType: "application/json",
+                temperature: 0.4,
+            }
         });
         
-        if (!response.ok) {
-            const err = await response.json();
-            throw new Error(err.details || err.error || "AI Skill Suggestion failed");
-        }
-        const result = await response.json();
-        return result.skills;
-    } catch (error) {
-        console.error("Gemini Service Error:", error);
+        return JSON.parse(response.text);
+    } catch (error: any) {
+        console.error("AI Skill Suggestion Error:", error);
         return [];
     }
 };
 
 export const parseResumeFromText = async (text: string): Promise<ResumeData> => {
     try {
-        const response = await fetch("/api/ai/parse-resume", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ text }),
+        const ai = getAI();
+        const response = await ai.models.generateContent({
+            model: MODEL_NAME,
+            contents: `Extract all information from this resume text and format it into a valid JSON object matching this schema:
+            {
+                "personalInfo": { "fullName": "", "email": "", "phone": "", "location": "", "website": "", "linkedin": "" },
+                "summary": "",
+                "experience": [ { "id": "uuid", "company": "", "position": "", "location": "", "startDate": "", "endDate": "", "current": boolean, "description": "bullet points" } ],
+                "education": [ { "id": "uuid", "institution": "", "degree": "", "fieldOfStudy": "", "startDate": "", "endDate": "" } ],
+                "skills": [ { "id": "uuid", "name": "", "level": "Expert" } ],
+                "projects": [ { "id": "uuid", "name": "", "description": "" } ],
+                "certifications": [ { "id": "uuid", "name": "", "issuer": "", "date": "" } ]
+            }
+            Resume Text: ${text}`,
+            config: {
+                responseMimeType: "application/json",
+            }
         });
         
-        if (!response.ok) {
-            const err = await response.json();
-            throw new Error(err.details || err.error || "AI Parsing failed");
-        }
-        const result = await response.json();
-        return result.data;
-    } catch (error) {
-        console.error("Gemini Service Error:", error);
+        return JSON.parse(response.text);
+    } catch (error: any) {
+        console.error("AI Parsing Error:", error);
         throw error;
     }
 };

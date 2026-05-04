@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ResumeData, WorkExperience, Education, Skill, Project } from '../types';
+import { ResumeData, WorkExperience, Education, Skill, Project, Certification } from '../types';
 import { 
     Sparkles, 
     Plus, 
@@ -17,14 +17,33 @@ import {
 import * as geminiService from '../services/geminiService';
 import { enhanceField } from '../services/aiService';
 import { motion, AnimatePresence } from 'motion/react';
+import { decrementUsage, auth } from '../services/firebase';
 
 interface EditorProps {
     data: ResumeData;
     onChange: (data: ResumeData) => void;
+    userLimits?: {
+        importLimit: number;
+        optimizeLimit: number;
+        enhanceLimit: number;
+    };
+    onUpgradeRequired?: (reason: string) => void;
 }
 
-export const ResumeEditor: React.FC<EditorProps> = ({ data, onChange }) => {
+export const ResumeEditor: React.FC<EditorProps> = ({ data, onChange, userLimits, onUpgradeRequired }) => {
     const [loadingAI, setLoadingAI] = useState<string | null>(null);
+
+    const checkEnhanceLimit = () => {
+        if (userLimits && userLimits.enhanceLimit <= 0) {
+            if (onUpgradeRequired) {
+                onUpgradeRequired("Smart Enhancement Limit Reached. Upgrade for more AI power.");
+            } else {
+                alert("Enhancement limit reached. Please upgrade your plan.");
+            }
+            return false;
+        }
+        return true;
+    };
 
     const updatePersonal = (field: keyof ResumeData['personalInfo'], value: string) => {
         onChange({
@@ -34,12 +53,17 @@ export const ResumeEditor: React.FC<EditorProps> = ({ data, onChange }) => {
     };
 
     const handleGenerateSummary = async () => {
+        if (!checkEnhanceLimit()) return;
         setLoadingAI('summary');
         try {
             const summary = await geminiService.generateSummary(data);
             onChange({ ...data, summary });
-        } catch (e) {
-            alert("Failed to generate summary. Check API Key.");
+            if (auth.currentUser) {
+                await decrementUsage(auth.currentUser.uid, 'enhanceLimit');
+            }
+        } catch (e: any) {
+            console.error(e);
+            alert(e.message || "Failed to generate summary. Please try again.");
         } finally {
             setLoadingAI(null);
         }
@@ -47,6 +71,7 @@ export const ResumeEditor: React.FC<EditorProps> = ({ data, onChange }) => {
 
     const handleEnhanceField = async (fieldPath: string, currentContent: string, fieldName: string) => {
         if (!currentContent.trim()) return;
+        if (!checkEnhanceLimit()) return;
         setLoadingAI(fieldPath);
         try {
             const context = `Improving ${fieldName} for a ${data.experience[0]?.position || 'professional'} resume.`;
@@ -63,28 +88,37 @@ export const ResumeEditor: React.FC<EditorProps> = ({ data, onChange }) => {
                 const newProj = (data.projects || []).map(p => p.id === id ? { ...p, description: enhanced } : p);
                 onChange({ ...data, projects: newProj });
             }
-        } catch (e) {
+
+            if (auth.currentUser) {
+                await decrementUsage(auth.currentUser.uid, 'enhanceLimit');
+            }
+        } catch (e: any) {
             console.error(e);
-            alert("Strategic enhancement failed. Please try again.");
+            alert(e.message || "Strategic enhancement failed. Please try again.");
         } finally {
             setLoadingAI(null);
         }
     };
 
     const handleEnhanceDescription = async (id: string, position: string, company: string, currentDesc: string) => {
+        if (!checkEnhanceLimit()) return;
         setLoadingAI(`desc-${id}`);
         try {
             const enhanced = await geminiService.enhanceJobDescription(position, company, currentDesc);
             const newExp = data.experience.map(e => e.id === id ? { ...e, description: enhanced } : e);
             onChange({ ...data, experience: newExp });
-        } catch (e) {
-            alert("Failed to enhance description.");
+            if (auth.currentUser) {
+                await decrementUsage(auth.currentUser.uid, 'enhanceLimit');
+            }
+        } catch (e: any) {
+            alert(e.message || "Failed to enhance description.");
         } finally {
             setLoadingAI(null);
         }
     };
 
     const handleSuggestSkills = async () => {
+        if (!checkEnhanceLimit()) return;
         // Find most recent job title
         const title = data.experience[0]?.position;
         if (!title) {
@@ -98,12 +132,15 @@ export const ResumeEditor: React.FC<EditorProps> = ({ data, onChange }) => {
             const newSkills = [...data.skills];
             suggestions.forEach(s => {
                 if (!newSkills.find(existing => existing.name === s)) {
-                    newSkills.push({ id: Math.random().toString(36).substr(2, 9), name: s, level: 'Intermediate' });
+                    newSkills.push({ id: Math.random().toString(36).substr(2, 9), name: s, category: 'Technical', level: 'Intermediate' });
                 }
             });
             onChange({ ...data, skills: newSkills });
-        } catch (e) {
-            alert("Failed to suggest skills.");
+            if (auth.currentUser) {
+                await decrementUsage(auth.currentUser.uid, 'enhanceLimit');
+            }
+        } catch (e: any) {
+            alert(e.message || "Failed to suggest skills.");
         } finally {
             setLoadingAI(null);
         }
@@ -163,19 +200,20 @@ export const ResumeEditor: React.FC<EditorProps> = ({ data, onChange }) => {
         });
     };
 
-    const updateCertifications = (index: number, value: string) => {
-        const newCerts = [...(data.certifications || [])];
-        newCerts[index] = value;
-        onChange({ ...data, certifications: newCerts });
+    const updateCertifications = (id: string, field: keyof Certification, value: string) => {
+        onChange({
+            ...data,
+            certifications: (data.certifications || []).map(c => c.id === id ? { ...c, [field]: value } : c)
+        });
     };
 
     const addCertification = () => {
-        onChange({ ...data, certifications: [...(data.certifications || []), ''] });
+        const newCert: Certification = { id: Math.random().toString(36).substr(2, 9), name: '', issuer: '', date: '' };
+        onChange({ ...data, certifications: [...(data.certifications || []), newCert] });
     };
 
-    const removeCertification = (index: number) => {
-        const newCerts = (data.certifications || []).filter((_, i) => i !== index);
-        onChange({ ...data, certifications: newCerts });
+    const removeCertification = (id: string) => {
+        onChange({ ...data, certifications: (data.certifications || []).filter(c => c.id !== id) });
     };
 
     const updateProject = (id: string, field: keyof Project, value: string) => {
@@ -485,27 +523,27 @@ export const ResumeEditor: React.FC<EditorProps> = ({ data, onChange }) => {
                         <Plus size={18} />
                     </button>
                 </div>
-                <div className="grid grid-cols-1 gap-3">
+                <div className="space-y-4">
                     <AnimatePresence initial={false}>
-                        {(data.certifications || []).map((cert, index) => (
+                        {(data.certifications || []).map((cert) => (
                             <motion.div 
-                                key={index}
+                                key={cert.id}
                                 layout
-                                initial={{ opacity: 0, y: 10 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: -10 }}
-                                className="flex items-center gap-3 group bg-white/50 border border-slate-100 rounded-2xl p-2 px-4 shadow-sm hover:shadow-md transition-all"
+                                initial={{ opacity: 0, scale: 0.95 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                exit={{ opacity: 0, scale: 0.95 }}
+                                className="group relative bg-slate-50/50 p-6 rounded-3xl border border-slate-100 hover:bg-white transition-all"
                             >
-                                <Award size={16} className="text-slate-400" />
-                                <input
-                                    className="flex-1 bg-transparent border-none p-2 text-sm font-medium text-slate-700 placeholder:text-slate-400 focus:ring-0 outline-none"
-                                    value={cert || ''}
-                                    onChange={e => updateCertifications(index, e.target.value)}
-                                    placeholder="Certification, Award or Honor"
-                                />
-                                <button onClick={() => removeCertification(index)} className="p-2 text-slate-300 hover:text-red-500 transition-all">
+                                <button onClick={() => removeCertification(cert.id)} className="absolute -top-3 -right-3 p-2 bg-white text-slate-300 hover:text-red-500 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-all border border-slate-100">
                                     <Trash2 size={16} />
                                 </button>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div className="md:col-span-2">
+                                        <input placeholder="Certification Name" className={inputClasses} value={cert.name || ''} onChange={e => updateCertifications(cert.id, 'name', e.target.value)} />
+                                    </div>
+                                    <input placeholder="Issuing Organization" className={inputClasses} value={cert.issuer || ''} onChange={e => updateCertifications(cert.id, 'issuer', e.target.value)} />
+                                    <input placeholder="Date Issued" className={inputClasses} value={cert.date || ''} onChange={e => updateCertifications(cert.id, 'date', e.target.value)} />
+                                </div>
                             </motion.div>
                         ))}
                     </AnimatePresence>

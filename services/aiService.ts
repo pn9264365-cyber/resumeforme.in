@@ -1,19 +1,48 @@
+import { GoogleGenAI } from "@google/genai";
 import { ResumeData, ATSScore, EnhancementSuggestion } from "../types";
-import { getAuth } from "firebase/auth";
+
+// Initialize AI client lazily
+let aiClient: GoogleGenAI | null = null;
+const getAI = () => {
+    if (!aiClient) {
+        const apiKey = process.env.GEMINI_API_KEY;
+        if (!apiKey) {
+            throw new Error("GEMINI_API_KEY is not defined. Please check your system settings or provide an API key in the environment.");
+        }
+        aiClient = new GoogleGenAI({ apiKey });
+    }
+    return aiClient;
+};
+
+const MODEL_NAME = "gemini-3-flash-preview";
 
 export async function analyzeATS(data: ResumeData): Promise<ATSScore> {
     try {
-        const response = await fetch("/api/ai/analyze-ats", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ data }),
+        const ai = getAI();
+        const response = await ai.models.generateContent({
+            model: MODEL_NAME,
+            contents: `You are an elite ATS Specialist. Analyze the following resume data and provide a detailed audit in JSON format.
+            {
+                "score": 0-100,
+                "verdict": "Strong Match" | "Partial Match" | "High Risk Rejection",
+                "feedback": ["point 1", "point 2"],
+                "missingKeywords": [{ "keyword": "React", "reason": "High demand" }],
+                "topChanges": ["Improve summary", "Quantify metrics"],
+                "detailedScores": {
+                    "atsCompatibility": 0-100,
+                    "keywordMatch": 0-100,
+                    "formatting": 0-100,
+                    "contentQuality": 0-100,
+                    "recruiterAppeal": 0-100
+                }
+            }
+            Resume: ${JSON.stringify(data)}`,
+            config: {
+                responseMimeType: "application/json",
+            }
         });
         
-        if (!response.ok) {
-            const err = await response.json();
-            throw new Error(err.details || err.error || "ATS Analysis failed");
-        }
-        return await response.json();
+        return JSON.parse(response.text);
     } catch (error) {
         console.error("ATS Analysis failed:", error);
         return {
@@ -29,34 +58,47 @@ export async function analyzeATS(data: ResumeData): Promise<ATSScore> {
 
 export async function fullEnhanceResume(data: ResumeData, analysis?: ATSScore): Promise<ResumeData> {
     try {
-        const response = await fetch("/api/ai/full-enhance", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ data, analysis }),
+        const ai = getAI();
+        const analysisContext = analysis ? JSON.stringify(analysis) : "None";
+        const response = await ai.models.generateContent({
+            model: MODEL_NAME,
+            contents: `Transform this resume into a top 1% profile.
+            Guidelines:
+            1. Improve every description.
+            2. Use industry-specific terminology.
+            3. Ensure summary is magnetizing.
+            4. Fix formatting inconsistencies.
+            
+            ATS Analysis Context: ${analysisContext}
+            Original Data: ${JSON.stringify(data)}
+            
+            Return the full updated ResumeData object in JSON format.`,
+            config: {
+                responseMimeType: "application/json",
+                temperature: 0.8,
+            }
         });
         
-        if (!response.ok) {
-            const err = await response.json();
-            throw new Error(err.details || err.error || "Full Enhancement failed");
-        }
-        const enhanced = await response.json();
+        const enhanced = JSON.parse(response.text);
         
         // Merge with original data to preserve non-AI-enhanced fields
         return {
             ...data,
             personalInfo: {
                 ...data.personalInfo,
-                fullName: enhanced.fullName || data.personalInfo.fullName,
-                email: enhanced.email || data.personalInfo.email,
-                phone: enhanced.phone || data.personalInfo.phone,
-                location: enhanced.location || data.personalInfo.location,
-                website: enhanced.website || data.personalInfo.website,
-                linkedin: enhanced.linkedin || data.personalInfo.linkedin,
+                fullName: enhanced.personalInfo?.fullName || data.personalInfo.fullName,
+                email: enhanced.personalInfo?.email || data.personalInfo.email,
+                phone: enhanced.personalInfo?.phone || data.personalInfo.phone,
+                location: enhanced.personalInfo?.location || data.personalInfo.location,
+                website: enhanced.personalInfo?.website || data.personalInfo.website,
+                linkedin: enhanced.personalInfo?.linkedin || data.personalInfo.linkedin,
             },
             summary: enhanced.summary || data.summary,
             experience: enhanced.experience || data.experience,
             skills: enhanced.skills || data.skills,
             projects: enhanced.projects || data.projects,
+            certifications: enhanced.certifications || data.certifications,
+            education: enhanced.education || data.education,
         };
     } catch (error) {
         console.error("Full enhancement failed:", error);
@@ -66,14 +108,18 @@ export async function fullEnhanceResume(data: ResumeData, analysis?: ATSScore): 
 
 export async function enhanceResume(data: ResumeData): Promise<EnhancementSuggestion[]> {
     try {
-        const response = await fetch("/api/ai/enhance-resume", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ data }),
+        const ai = getAI();
+        const response = await ai.models.generateContent({
+            model: MODEL_NAME,
+            contents: `Review this resume and suggest 5 specific enhancements for summary and experience descriptions.
+            Return an array of objects: [{ "original": "text", "suggested": "better text", "reason": "why" }]
+            Resume: ${JSON.stringify(data)}`,
+            config: {
+                responseMimeType: "application/json",
+            }
         });
         
-        if (!response.ok) throw new Error("Enhancement failed");
-        return await response.json();
+        return JSON.parse(response.text);
     } catch (error) {
         console.error("Enhancement failed:", error);
         return [];
@@ -82,18 +128,19 @@ export async function enhanceResume(data: ResumeData): Promise<EnhancementSugges
 
 export async function enhanceField(fieldName: string, content: string, context: string): Promise<string> {
     try {
-        const response = await fetch("/api/ai/enhance-field", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ fieldName, content, context }),
+        const ai = getAI();
+        const response = await ai.models.generateContent({
+            model: MODEL_NAME,
+            contents: `Professional Resume Editor. Improve ${fieldName}.
+            CONTEXT: ${context}
+            CONTENT: ${content}
+            Return ONLY the improved string.`,
+            config: {
+                temperature: 0.7,
+            }
         });
         
-        if (!response.ok) {
-            const err = await response.json();
-            throw new Error(err.details || err.error || "Field enhancement failed");
-        }
-        const result = await response.json();
-        return result.text;
+        return response.text.trim();
     } catch (error) {
         console.error(`Field enhancement failed for ${fieldName}:`, error);
         return content;

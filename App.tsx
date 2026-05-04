@@ -11,6 +11,11 @@ import { TechnicalTemplate } from './components/templates/TechnicalTemplate';
 import { ElegantTemplate } from './components/templates/ElegantTemplate';
 import { CompactTemplate } from './components/templates/CompactTemplate';
 import { PremiumTemplate } from './components/templates/PremiumTemplate';
+import VentureTemplate from './components/templates/VentureTemplate';
+import ChronicleTemplate from './components/templates/ChronicleTemplate';
+import SynergyTemplate from './components/templates/SynergyTemplate';
+import EliteTemplate from './components/templates/EliteTemplate';
+import ApexTemplate from './components/templates/ApexTemplate';
 import { 
     TrendingUp, 
     Zap, 
@@ -47,7 +52,7 @@ import { parseResumeFromText } from './services/geminiService';
 import { extractTextFromPdf } from './services/pdfService';
 import { analyzeATS, enhanceResume, fullEnhanceResume } from './services/aiService';
 import { ATSScore, EnhancementSuggestion } from './types';
-import { auth, db, onAuthStateChanged, User, UserProfile, onSnapshot, incrementUsage, signInWithGoogle } from './services/firebase';
+import { auth, db, onAuthStateChanged, User, UserProfile, onSnapshot, decrementUsage, signInWithGoogle } from './services/firebase';
 import { GoogleLoginButton } from './components/Auth/GoogleLoginButton';
 import { doc } from 'firebase/firestore';
 import { upgradeToPremium, refillUsage } from './services/firebase';
@@ -118,9 +123,9 @@ const initialData: ResumeData = {
         { id: '4', name: 'PostgreSQL, Redis, MongoDB, ElasticSearch', category: 'Data Engineering', level: 'Intermediate' },
     ],
     certifications: [
-        'AWS Certified Solutions Architect – Professional',
-        'Google Professional Cloud Architect',
-        'Scrum Alliance Certified Product Owner'
+        { id: '1', name: 'AWS Certified Solutions Architect – Professional', issuer: 'Amazon Web Services', date: '2023' },
+        { id: '2', name: 'Google Professional Cloud Architect', issuer: 'Google Cloud', date: '2022' },
+        { id: '3', name: 'Scrum Alliance Certified Product Owner', issuer: 'Scrum Alliance', date: '2021' }
     ],
     projects: [
         {
@@ -139,6 +144,7 @@ const initialData: ResumeData = {
 };
 
 const App: React.FC = () => {
+    const [isLoggingIn, setIsLoggingIn] = useState(false);
     const [user, setUser] = React.useState<User | null>(null);
     const [authLoading, setAuthLoading] = React.useState(true);
     const [userData, setUserData] = React.useState<UserProfile | null>(null);
@@ -225,11 +231,21 @@ const App: React.FC = () => {
                         if (verifyData.status === 'ok') {
                             // Calculate credits based on amount
                             let credits = { imports: 1, audits: 5, enhancements: 10 };
-                            if (amount === 29) credits = { imports: 2, audits: 10, enhancements: 20 };
-                            if (amount === 49) credits = { imports: 3, audits: 20, enhancements: 50 };
-                            if (amount === 99) credits = { imports: 4, audits: 50, enhancements: 1000 };
+                            let planType: 'basic' | 'pro' | 'elite' = 'basic';
+                            if (amount === 29) {
+                                credits = { imports: 2, audits: 10, enhancements: 20 };
+                                planType = 'basic';
+                            }
+                            if (amount === 49) {
+                                credits = { imports: 3, audits: 20, enhancements: 50 };
+                                planType = 'pro';
+                            }
+                            if (amount === 99) {
+                                credits = { imports: 4, audits: 50, enhancements: 1000 };
+                                planType = 'elite';
+                            }
 
-                            await refillUsage(user.uid, credits);
+                            await refillUsage(user.uid, credits, planType);
                             setIsPricingOpen(false);
                             setIsUpgradeModalOpen(false);
                             alert('Welcome to Elite! Your credits have been refilled.');
@@ -269,16 +285,31 @@ const App: React.FC = () => {
     };
 
     const handleLogin = async () => {
+        console.log("handleLogin initiated");
+        setIsLoggingIn(true);
         try {
-            await signInWithGoogle();
-        } catch (error) {
+            const loginResult = await signInWithGoogle();
+            console.log("Login result:", loginResult);
+        } catch (error: any) {
             console.error("Login failed:", error);
+            // Check for common popup errors
+            if (error?.code === 'auth/popup-blocked') {
+                alert("The sign-in popup was blocked by your browser. Please allow popups for this site.");
+            } else if (error?.code === 'auth/popup-closed-by-user') {
+                // User closed it, no need for alert
+            } else {
+                alert("Login failed. Please ensure your browser allows popups and try again.");
+            }
+        } finally {
+            setIsLoggingIn(false);
+            console.log("handleLogin completed");
         }
     };
 
     const handleAnalyzeATS = async () => {
         if (!user || !userData) return;
-        if (!userData.isPremium && userData.optimizeCount >= (userData.optimizeLimit || 2)) {
+        const limit = userData.optimizeLimit ?? 0;
+        if (limit <= 0) {
             setUpgradeReason({
                 title: "Strategic Rewrite Limit Reached",
                 description: "Deep AI Optimization requires significant resources. Get a Power Pack for ₹9 to unlock 3 more strategic rewrites and 10 enhancements."
@@ -292,7 +323,7 @@ const App: React.FC = () => {
             const score = await analyzeATS(resumeData);
             setAtsScore(score);
             setShowResultsModal(true);
-            await incrementUsage(user.uid, 'optimizeCount');
+            await decrementUsage(user.uid, 'optimizeLimit');
         } catch (error) {
             console.error(error);
         } finally {
@@ -302,7 +333,8 @@ const App: React.FC = () => {
 
     const handleEnhanceResume = async () => {
         if (!user || !userData) return;
-        if (!userData.isPremium && userData.enhanceCount >= (userData.enhanceLimit || 5)) {
+        const limit = userData.enhanceLimit ?? 0;
+        if (limit <= 0) {
             setUpgradeReason({
                 title: "Enhancement Limit Reached",
                 description: "Our AI brain is working hard to polish your resume. Get a Power Pack for ₹9 for 10 more enhancements."
@@ -316,7 +348,7 @@ const App: React.FC = () => {
             const newSuggestions = await enhanceResume(resumeData);
             setSuggestions(newSuggestions);
             setShowResultsModal(true);
-            await incrementUsage(user.uid, 'enhanceCount');
+            await decrementUsage(user.uid, 'enhanceLimit');
         } catch (error) {
             console.error(error);
         } finally {
@@ -326,7 +358,8 @@ const App: React.FC = () => {
 
     const handleFullEnhance = async () => {
         if (!user || !userData) return;
-        if (!userData.isPremium && userData.optimizeCount >= (userData.optimizeLimit || 2)) {
+        const limit = userData.optimizeLimit ?? 0;
+        if (limit <= 0) {
             setUpgradeReason({
                 title: "Deep Optimization Limit Reached",
                 description: "The 85+ score strategic overhaul uses advanced AI logic. Unlock 3 more attempts for just ₹9."
@@ -348,7 +381,7 @@ const App: React.FC = () => {
             const postAnalysis = await analyzeATS(enhancedData);
             setAtsScore(postAnalysis);
             setShowResultsModal(true);
-            await incrementUsage(user.uid, 'optimizeCount');
+            await decrementUsage(user.uid, 'optimizeLimit');
         } catch (error) {
             console.error(error);
             alert("Strategic overhaul failed. Please check your internet connection.");
@@ -389,7 +422,8 @@ const App: React.FC = () => {
     const handleImportText = async () => {
         if (!importText.trim() || !user || !userData) return;
         
-        if (!userData.isPremium && userData.importCount >= (userData.importLimit || 2)) {
+        const limit = userData.importLimit ?? 0;
+        if (limit <= 0) {
             setUpgradeReason({
                 title: "Import Limit Reached",
                 description: "Importing resumes from text or PDF requires powerful parsing. Get 2 more imports and 10 enhancements for ₹9."
@@ -404,7 +438,7 @@ const App: React.FC = () => {
             setResumeData(parsedData);
             setIsImportModalOpen(false);
             setImportText('');
-            await incrementUsage(user.uid, 'importCount');
+            await decrementUsage(user.uid, 'importLimit');
         } catch (error) {
             console.error(error);
             alert('Failed to parse resume text. Please try a cleaner format.');
@@ -415,7 +449,17 @@ const App: React.FC = () => {
 
     const handleImportPdf = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
-        if (!file) return;
+        if (!file || !user || !userData) return;
+
+        const limit = userData.importLimit ?? 0;
+        if (limit <= 0) {
+            setUpgradeReason({
+                title: "Import Limit Reached",
+                description: "Importing resumes from text or PDF requires powerful parsing. Get 2 more imports and 10 enhancements for ₹9."
+            });
+            setIsUpgradeModalOpen(true);
+            return;
+        }
 
         setIsParsing(true);
         try {
@@ -423,6 +467,7 @@ const App: React.FC = () => {
             const parsedData = await parseResumeFromText(text);
             setResumeData(parsedData);
             setIsImportModalOpen(false);
+            await decrementUsage(user.uid, 'importLimit');
         } catch (error) {
             console.error(error);
             alert('Failed to parse PDF. Please try copying the text manually.');
@@ -431,23 +476,61 @@ const App: React.FC = () => {
         }
     };
 
-    const renderTemplate = () => {
-        switch (activeTemplate) {
-            case 'classic': return <ClassicTemplate data={resumeData} />;
-            case 'minimal': return <MinimalTemplate data={resumeData} />;
-            case 'professional': return <ProfessionalTemplate data={resumeData} />;
-            case 'executive': return <ExecutiveTemplate data={resumeData} />;
-            case 'creative': return <CreativeTemplate data={resumeData} />;
-            case 'technical': return <TechnicalTemplate data={resumeData} />;
-            case 'elegant': return <ElegantTemplate data={resumeData} />;
-            case 'compact': return <CompactTemplate data={resumeData} />;
-            case 'premium': return <PremiumTemplate data={resumeData} />;
-            case 'modern':
-            default: return <ModernTemplate data={resumeData} />;
-        }
+    const premiumTemplates: TemplateId[] = ['creative', 'technical', 'elegant', 'compact', 'premium', 'venture', 'chronicle', 'synergy', 'elite', 'apex'];
+
+    const handleTemplateSelect = (t: TemplateId) => {
+        setActiveTemplate(t);
+        setIsTemplateModalOpen(false);
     };
 
-    const [isLoggingIn, setIsLoggingIn] = useState(false);
+    const renderTemplate = () => {
+        const isPremium = premiumTemplates.includes(activeTemplate);
+        const hasPremiumAccess = userData?.planType === 'pro' || userData?.planType === 'elite';
+        const showWatermark = isPremium && !hasPremiumAccess;
+        
+        const templateContent = (() => {
+            switch (activeTemplate) {
+                case 'classic': return <ClassicTemplate data={resumeData} />;
+                case 'minimal': return <MinimalTemplate data={resumeData} />;
+                case 'professional': return <ProfessionalTemplate data={resumeData} />;
+                case 'executive': return <ExecutiveTemplate data={resumeData} />;
+                case 'creative': return <CreativeTemplate data={resumeData} />;
+                case 'technical': return <TechnicalTemplate data={resumeData} />;
+                case 'elegant': return <ElegantTemplate data={resumeData} />;
+                case 'compact': return <CompactTemplate data={resumeData} />;
+                case 'premium': return <PremiumTemplate data={resumeData} />;
+                case 'venture': return <VentureTemplate data={resumeData} />;
+                case 'chronicle': return <ChronicleTemplate data={resumeData} />;
+                case 'synergy': return <SynergyTemplate data={resumeData} />;
+                case 'elite': return <EliteTemplate data={resumeData} />;
+                case 'apex': return <ApexTemplate data={resumeData} />;
+                case 'modern':
+                default: return <ModernTemplate data={resumeData} />;
+            }
+        })();
+
+        return (
+            <div className="relative h-full overflow-hidden print:overflow-visible print:h-auto">
+                {templateContent}
+                {showWatermark && (
+                    <div className="absolute inset-0 flex flex-col justify-around pointer-events-none z-50 py-20">
+                        <div className="rotate-[-25deg] opacity-[0.05] select-none text-center">
+                            <div className="text-6xl font-black whitespace-nowrap uppercase tracking-[0.4em] text-slate-900">resumeforne</div>
+                            <div className="text-2xl font-bold mt-2 uppercase tracking-widest text-slate-900">madeby mjforyou</div>
+                        </div>
+                        <div className="rotate-[-25deg] opacity-[0.05] select-none text-center transform translate-x-12">
+                            <div className="text-8xl font-black whitespace-nowrap uppercase tracking-[0.5em] text-slate-900">resumeforne</div>
+                            <div className="text-4xl font-bold mt-4 uppercase tracking-widest text-slate-900">madeby mjforyou</div>
+                        </div>
+                        <div className="rotate-[-25deg] opacity-[0.05] select-none text-center transform -translate-x-12">
+                            <div className="text-6xl font-black whitespace-nowrap uppercase tracking-[0.4em] text-slate-900">resumeforne</div>
+                            <div className="text-2xl font-bold mt-2 uppercase tracking-widest text-slate-900">madeby mjforyou</div>
+                        </div>
+                    </div>
+                )}
+            </div>
+        );
+    };
 
     const handleLogout = async () => {
         try {
@@ -456,6 +539,48 @@ const App: React.FC = () => {
             console.error('Logout failed:', error);
         }
     };
+
+    const NeuralProcessingOverlay = ({ message }: { message: string }) => (
+        <AnimatePresence>
+            <motion.div 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="fixed inset-0 z-[100] backdrop-blur-2xl bg-white/40 flex items-center justify-center p-8 text-center print:hidden"
+            >
+                <div className="max-w-md w-full">
+                    <div className="relative mb-12 flex justify-center">
+                        <div className="absolute inset-0 bg-indigo-500/20 blur-[60px] rounded-full animate-pulse" />
+                        <div className="relative h-24 w-24 bg-slate-900 rounded-[2rem] shadow-2xl flex items-center justify-center">
+                            <SparklesIcon size={40} className="text-indigo-400 animate-pulse" />
+                        </div>
+                    </div>
+                    <h2 className="text-3xl font-black text-slate-900 tracking-tighter mb-4 capitalize">{message}</h2>
+                    <div className="flex flex-col items-center gap-6">
+                        <div className="w-full h-1 bg-slate-100 rounded-full overflow-hidden">
+                            <motion.div 
+                                initial={{ x: '-100%' }}
+                                animate={{ x: '100%' }}
+                                transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                                className="h-full w-1/2 bg-indigo-600 rounded-full"
+                            />
+                        </div>
+                        <p className="text-sm font-black uppercase tracking-[0.3em] text-slate-400">Processing via Google Gemini Engine</p>
+                        <div className="flex gap-2">
+                             {[1,2,3].map(i => (
+                                <motion.div 
+                                    key={i}
+                                    animate={{ scale: [1, 1.5, 1], opacity: [0.3, 1, 0.3] }}
+                                    transition={{ duration: 1, repeat: Infinity, delay: i * 0.2 }}
+                                    className="w-1.5 h-1.5 bg-indigo-500 rounded-full"
+                                />
+                             ))}
+                        </div>
+                    </div>
+                </div>
+            </motion.div>
+        </AnimatePresence>
+    );
 
     if (authLoading) {
         return (
@@ -481,11 +606,13 @@ const App: React.FC = () => {
         <div className="h-screen bg-white overflow-hidden relative">
             <AnimatePresence>
                 {isPricingOpen && (
-                    <PricingPage 
-                        onClose={() => setIsPricingOpen(false)} 
-                        onUpgrade={handlePayment}
-                        isUpgrading={isUpgrading}
-                    />
+                    <div className="print:hidden">
+                        <PricingPage 
+                            onClose={() => setIsPricingOpen(false)} 
+                            onUpgrade={handlePayment}
+                            isUpgrading={isUpgrading}
+                        />
+                    </div>
                 )}
             </AnimatePresence>
 
@@ -509,7 +636,22 @@ const App: React.FC = () => {
                 {/* Editor Scrollable Area */}
                 <div className="w-5/12 h-full overflow-y-auto border-r border-slate-100 no-scrollbar print:hidden bg-white/40 backdrop-blur-sm">
                     <div className="max-w-xl mx-auto p-10">
-                        <ResumeEditor data={resumeData} onChange={setResumeData} />
+                        <ResumeEditor 
+                            data={resumeData} 
+                            onChange={setResumeData} 
+                            userLimits={userData ? {
+                                importLimit: userData.importLimit || 0,
+                                optimizeLimit: userData.optimizeLimit || 0,
+                                enhanceLimit: userData.enhanceLimit || 0
+                            } : undefined}
+                            onUpgradeRequired={(reason) => {
+                                setUpgradeReason({
+                                    title: "AI Power Limit Reached",
+                                    description: reason
+                                });
+                                setIsUpgradeModalOpen(true);
+                            }}
+                        />
                     </div>
                 </div>
 
@@ -532,22 +674,32 @@ const App: React.FC = () => {
                 </div>
             </div>
 
-            <UpgradeModal 
-                isOpen={isUpgradeModalOpen} 
-                onClose={() => setIsUpgradeModalOpen(false)} 
-                onUpgrade={handlePayment}
-                onViewPlans={() => {
-                    setIsUpgradeModalOpen(false);
-                    setIsPricingOpen(true);
-                }}
-                title={upgradeReason.title}
-                description={upgradeReason.description}
-            />
+            {(isAnalyzing || isEnhancing) && (
+                <NeuralProcessingOverlay message={isAnalyzing ? "Neural Rank Audit" : "Strategic AI Overhaul"} />
+            )}
+
+            {isParsing && (
+                <NeuralProcessingOverlay message="Neural Context Import" />
+            )}
+
+            <div className="print:hidden">
+                <UpgradeModal 
+                    isOpen={isUpgradeModalOpen} 
+                    onClose={() => setIsUpgradeModalOpen(false)} 
+                    onUpgrade={handlePayment}
+                    onViewPlans={() => {
+                        setIsUpgradeModalOpen(false);
+                        setIsPricingOpen(true);
+                    }}
+                    title={upgradeReason.title}
+                    description={upgradeReason.description}
+                />
+            </div>
 
             {/* Template Selection Modal */}
             <AnimatePresence>
                 {isTemplateModalOpen && (
-                    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+                    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 print:hidden">
                         <motion.div 
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
@@ -574,16 +726,13 @@ const App: React.FC = () => {
                                 </button>
                             </div>
                             
-                            <div className="p-10 overflow-y-auto grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-8 bg-slate-50/30">
-                                    {(['modern', 'classic', 'minimal', 'professional', 'executive', 'creative', 'technical', 'elegant', 'compact', 'premium'] as TemplateId[]).map((t) => (
+                            <div className="p-10 overflow-y-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-8 bg-slate-50/30">
+                                    {(['modern', 'classic', 'minimal', 'professional', 'executive', 'creative', 'technical', 'elegant', 'compact', 'premium', 'venture', 'chronicle', 'synergy', 'elite', 'apex'] as TemplateId[]).map((t) => (
                                         <motion.button
                                             key={t}
                                             whileHover={{ y: -8 }}
                                             whileTap={{ scale: 0.98 }}
-                                            onClick={() => {
-                                                setActiveTemplate(t);
-                                                setIsTemplateModalOpen(false);
-                                            }}
+                                            onClick={() => handleTemplateSelect(t)}
                                             className={`group relative flex flex-col items-center p-6 rounded-[2.5rem] transition-all border-2 ${
                                                 activeTemplate === t 
                                                 ? 'border-indigo-500 bg-white shadow-2xl shadow-indigo-100' 
@@ -685,12 +834,64 @@ const App: React.FC = () => {
                                                             <div className="h-1 w-full bg-indigo-100" />
                                                         </div>
                                                     )}
+                                                    {t === 'venture' && (
+                                                        <div className="flex flex-col h-full bg-white p-2">
+                                                            <div className="h-4 w-full bg-slate-900 mb-2" />
+                                                            <div className="flex gap-1 h-full">
+                                                                <div className="flex-1 space-y-1">
+                                                                    {[1,2,3,4].map(i => <div key={i} className="h-1 bg-slate-100" />)}
+                                                                </div>
+                                                                <div className="w-1/3 bg-slate-50" />
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                    {t === 'chronicle' && (
+                                                        <div className="flex flex-col h-full items-center p-2 border-4 border-slate-50">
+                                                            <div className="h-2 w-1/4 bg-slate-200 mb-4" />
+                                                            <div className="h-1 w-full bg-slate-100 mb-1" />
+                                                            <div className="h-24 w-full bg-slate-50" />
+                                                        </div>
+                                                    )}
+                                                    {t === 'synergy' && (
+                                                        <div className="flex h-full">
+                                                            <div className="w-1/3 bg-slate-900" />
+                                                            <div className="flex-1 p-2 space-y-1">
+                                                                <div className="h-2 w-1/2 bg-indigo-100 mb-4" />
+                                                                {[1,2,3].map(i => <div key={i} className="h-1 w-full bg-slate-50" />)}
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                    {t === 'elite' && (
+                                                        <div className="flex flex-col h-full p-4 border-b border-black">
+                                                            <div className="h-4 w-full bg-slate-50 mb-4" />
+                                                            <div className="space-y-4">
+                                                                {[1,2].map(i => <div key={i} className="flex gap-2"><div className="w-4 h-1 bg-slate-200" /><div className="flex-1 h-1 bg-slate-50" /></div>)}
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                    {t === 'apex' && (
+                                                        <div className="flex flex-col h-full rounded-2xl overflow-hidden">
+                                                            <div className="h-4 w-full bg-slate-900" />
+                                                            <div className="flex-1 flex">
+                                                                <div className="flex-1 p-2 bg-white" />
+                                                                <div className="w-1/4 bg-slate-50" />
+                                                            </div>
+                                                        </div>
+                                                    )}
                                                 </div>
                                             </div>
                                             <span className={`text-[11px] font-black uppercase tracking-[0.25em] ${
                                                 activeTemplate === t ? 'text-indigo-600' : 'text-slate-400 group-hover:text-slate-900'
                                             }`}>{t}</span>
                                             
+                                            {premiumTemplates.includes(t) && !(userData?.planType === 'pro' || userData?.planType === 'elite') && (
+                                                <div className="absolute top-4 left-4">
+                                                    <div className="bg-slate-900/10 backdrop-blur-md rounded-full p-1.5 shadow-sm">
+                                                        <ShieldCheck size={14} className="text-slate-400" />
+                                                    </div>
+                                                </div>
+                                            )}
+
                                             {activeTemplate === t && (
                                                 <div className="absolute top-4 right-4">
                                                     <div className="bg-indigo-600 rounded-full p-1.5 shadow-lg">
@@ -708,7 +909,7 @@ const App: React.FC = () => {
 
             {/* Import Modal */}
             {isImportModalOpen && (
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 print:hidden">
                     <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden animate-in fade-in zoom-in duration-300">
                         <div className="bg-slate-900 p-6 text-white flex justify-between items-center border-b border-white/10">
                             <div>
@@ -779,7 +980,7 @@ const App: React.FC = () => {
             {/* Results Modal */}
             <AnimatePresence>
                 {showResultsModal && (
-                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 print:hidden">
                         <motion.div
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}

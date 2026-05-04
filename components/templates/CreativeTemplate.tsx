@@ -58,7 +58,7 @@ export const CreativeTemplate: React.FC<TemplateProps> = ({ data }) => {
                             <h2 className="text-sm uppercase tracking-widest font-black text-indigo-300 mb-8">Work History</h2>
                             <div className="space-y-10">
                                 {data.experience.map(exp => (
-                                    <div key={exp.id} className="relative pl-8">
+                                    <div key={exp.id} className="relative pl-8 print:break-inside-avoid">
                                         <div className="absolute left-0 top-0 bottom-0 w-1 bg-pink-200"></div>
                                         <div className="absolute left-[-4px] top-0 h-3 w-3 bg-indigo-600 rounded-full"></div>
                                         <h3 className="text-xl font-bold mb-1">{exp.position}</h3>
@@ -74,16 +74,30 @@ export const CreativeTemplate: React.FC<TemplateProps> = ({ data }) => {
                     )}
 
                     {data.projects && data.projects.length > 0 && (
-                        <div>
+                        <div className="mb-12">
                             <h2 className="text-sm uppercase tracking-widest font-black text-indigo-300 mb-8">Selected Projects</h2>
                             <div className="grid grid-cols-1 gap-6">
                                 {data.projects.map(project => (
-                                    <div key={project.id} className="bg-pink-50 p-6 rounded-2xl border border-pink-100 flex flex-col justify-between">
+                                    <div key={project.id} className="bg-pink-50 p-6 rounded-2xl border border-pink-100 flex flex-col justify-between print:break-inside-avoid">
                                         <div>
                                             <h4 className="font-bold text-lg mb-2">{project.name}</h4>
                                             <p className="text-sm text-indigo-800/70 mb-4">{project.description}</p>
                                         </div>
                                         {project.technologies && <span className="text-[10px] font-bold text-pink-500 uppercase">{project.technologies}</span>}
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {data.certifications && data.certifications.length > 0 && (
+                        <div>
+                            <h2 className="text-sm uppercase tracking-widest font-black text-indigo-300 mb-8">Verifications</h2>
+                            <div className="grid grid-cols-1 gap-4">
+                                {data.certifications.map(cert => (
+                                    <div key={cert.id} className="p-5 border-2 border-indigo-50 rounded-2xl print:break-inside-avoid">
+                                        <div className="font-black text-indigo-900 leading-tight">{cert.name}</div>
+                                        <div className="text-xs font-bold text-pink-500 mt-1 uppercase tracking-tighter">{cert.issuer} {cert.date && `• ${cert.date}`}</div>
                                     </div>
                                 ))}
                             </div>

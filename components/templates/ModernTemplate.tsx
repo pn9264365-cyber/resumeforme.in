@@ -24,7 +24,7 @@ export const ModernTemplate: React.FC<TemplateProps> = ({ data }) => {
 
                 {/* Education */}
                 {data.education.length > 0 && (
-                    <div className="text-sm">
+                    <div className="text-sm print:break-inside-avoid">
                         <p className="font-semibold text-slate-400 uppercase tracking-widest text-xs mb-3">Education</p>
                         <div className="space-y-4">
                             {data.education.map(edu => (
@@ -42,7 +42,7 @@ export const ModernTemplate: React.FC<TemplateProps> = ({ data }) => {
 
                 {/* Skills */}
                 {data.skills.length > 0 && (
-                    <div className="text-sm">
+                    <div className="text-sm print:break-inside-avoid">
                         <p className="font-semibold text-slate-400 uppercase tracking-widest text-xs mb-3">Skills</p>
                         <div className="space-y-4">
                             {Array.from(new Set(data.skills.map(s => s.category || 'Other'))).map(category => (
@@ -64,16 +64,17 @@ export const ModernTemplate: React.FC<TemplateProps> = ({ data }) => {
                 )}
                 {/* Certifications */}
                 {data.certifications && data.certifications.length > 0 && (
-                    <div className="text-sm">
+                    <div className="text-sm print:break-inside-avoid">
                         <p className="font-semibold text-slate-400 uppercase tracking-widest text-xs mb-3">Certifications</p>
-                        <ul className="space-y-2 text-xs text-slate-300">
-                            {data.certifications.map((cert, idx) => (
-                                <li key={idx} className="flex gap-2">
-                                    <span className="text-blue-400">•</span>
-                                    {cert}
-                                </li>
+                        <div className="space-y-3">
+                            {data.certifications.map((cert) => (
+                                <div key={cert.id} className="text-xs text-slate-300 leading-snug">
+                                    <div className="font-bold text-blue-400">{cert.name}</div>
+                                    <div className="text-slate-400 opacity-80">{cert.issuer}</div>
+                                    {cert.date && <div className="text-[10px] text-slate-500 mt-0.5">{cert.date}</div>}
+                                </div>
                             ))}
-                        </ul>
+                        </div>
                     </div>
                 )}
             </div>
@@ -96,7 +97,7 @@ export const ModernTemplate: React.FC<TemplateProps> = ({ data }) => {
                         <h2 className="text-lg font-bold uppercase tracking-widest text-slate-900 mb-4">Experience</h2>
                         <div className="space-y-6">
                             {data.experience.map(exp => (
-                                <div key={exp.id}>
+                                <div key={exp.id} className="print:break-inside-avoid">
                                     <div className="flex justify-between items-baseline mb-1">
                                         <h3 className="font-bold text-slate-800 text-md">{exp.position}</h3>
                                         <span className="text-xs text-slate-500 font-medium whitespace-nowrap ml-4">
@@ -119,7 +120,7 @@ export const ModernTemplate: React.FC<TemplateProps> = ({ data }) => {
                         <h2 className="text-lg font-bold uppercase tracking-widest text-slate-900 mb-4">Projects</h2>
                         <div className="space-y-6">
                             {data.projects.map(project => (
-                                <div key={project.id}>
+                                <div key={project.id} className="print:break-inside-avoid">
                                     <div className="flex justify-between items-baseline mb-1">
                                         <h3 className="font-bold text-slate-800 text-md">{project.name}</h3>
                                         {project.technologies && <span className="text-[10px] uppercase font-bold text-blue-600 ml-4">{project.technologies}</span>}
@@ -132,6 +133,9 @@ export const ModernTemplate: React.FC<TemplateProps> = ({ data }) => {
                         </div>
                     </div>
                 )}
+
+                {/* Certifications - Moved to Main Content if sidebar gets too long, or refined in sidebar */}
+                {/* For ModernTemplate, let's keep it in sidebar but update UI */}
 
                 {/* Publications */}
                 {data.publications && data.publications.length > 0 && (
